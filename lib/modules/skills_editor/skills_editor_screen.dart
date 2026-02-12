@@ -28,61 +28,152 @@ class SkillsEditorScreen extends GetView<SkillsEditorController> {
         }
 
         if (controller.skills.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.code_off_rounded,
-                  size: 64,
-                  color: isDark
-                      ? AppColors.darkTextSecondary
-                      : AppColors.lightTextSecondary,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No skills added yet',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: isDark
-                        ? AppColors.darkTextSecondary
-                        : AppColors.lightTextSecondary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Tap + to add your first skill',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: isDark
-                        ? AppColors.darkTextSecondary
-                        : AppColors.lightTextSecondary,
-                  ),
-                ),
-              ],
-            ),
-          );
+          return _buildEmptyState(context, isDark, theme);
         }
 
         return RefreshIndicator(
           onRefresh: controller.loadData,
-          child: ListView.separated(
+          child: ListView(
             padding: const EdgeInsets.all(16),
-            itemCount: controller.skills.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              final skill = controller.skills[index];
-              return _SkillCard(
-                skill: skill,
-                onEdit: () =>
-                    _showSkillDialog(context, index: index, skill: skill),
-                onDelete: () => _confirmDelete(context, index),
+            children: SkillsEditorController.categories.map((category) {
+              final categorySkills = controller.skills
+                  .where((s) => s['category'] == category)
+                  .toList();
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildCategoryHeader(context, category, theme, isDark),
+                  const SizedBox(height: 12),
+                  if (categorySkills.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 24, left: 16),
+                      child: Text(
+                        'No skills in this category',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary,
+                        ),
+                      ),
+                    )
+                  else
+                    ReorderableListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: categorySkills.length,
+                      onReorder: (oldIndex, newIndex) => controller
+                          .reorderSkills(category, oldIndex, newIndex),
+                      itemBuilder: (context, index) {
+                        final skill = categorySkills[index];
+                        // Find the actual index in the main controller list for edit/delete
+                        final actualIndex = controller.skills.indexOf(skill);
+
+                        return Padding(
+                          key: ValueKey('${category}_${skill['name']}_$index'),
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: _SkillCard(
+                            skill: skill,
+                            onEdit: () => _showSkillDialog(
+                              context,
+                              index: actualIndex,
+                              skill: skill,
+                            ),
+                            onDelete: () =>
+                                _confirmDelete(context, actualIndex),
+                          ),
+                        );
+                      },
+                    ),
+                  const SizedBox(height: 16),
+                ],
               );
-            },
+            }).toList(),
           ),
         );
       }),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showSkillDialog(context),
         child: const Icon(Icons.add_rounded),
+      ),
+    );
+  }
+
+  Widget _buildCategoryHeader(
+    BuildContext context,
+    String category,
+    ThemeData theme,
+    bool isDark,
+  ) {
+    final color = AppColors.categoryColor(category);
+    final label = SkillsEditorController.categoryLabels[category] ?? category;
+
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
+          ),
+          child: Text(
+            label.toUpperCase(),
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: color,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Divider(
+            color: (isDark ? AppColors.darkBorder : AppColors.lightBorder)
+                .withValues(alpha: 0.5),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context, bool isDark, ThemeData theme) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.code_off_rounded,
+            size: 64,
+            color: isDark
+                ? AppColors.darkTextSecondary
+                : AppColors.lightTextSecondary,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No skills added yet',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Tap + to add your first skill',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
+            ),
+          ),
+          const SizedBox(height: 24),
+          FilledButton.icon(
+            onPressed: controller.seedSkills,
+            icon: const Icon(Icons.cloud_upload_rounded),
+            label: const Text('Seed Default Skills'),
+          ),
+        ],
       ),
     );
   }
