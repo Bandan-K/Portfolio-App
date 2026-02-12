@@ -8,8 +8,6 @@ class HeroEditorScreen extends GetView<HeroEditorController> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(title: const Text('Edit Hero Section')),
       body: Obx(() {

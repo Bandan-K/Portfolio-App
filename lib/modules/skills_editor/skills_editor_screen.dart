@@ -126,7 +126,6 @@ class SkillsEditorScreen extends GetView<SkillsEditorController> {
     Get.dialog(
       StatefulBuilder(
         builder: (context, setDialogState) {
-          final theme = Theme.of(context);
           return AlertDialog(
             title: Text(index == null ? 'Add Skill' : 'Edit Skill'),
             content: SingleChildScrollView(
