@@ -5,6 +5,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class SkillsEditorController extends GetxController {
   final skills = <Map<String, dynamic>>[].obs;
   final isLoading = false.obs;
+  
+  // Track initial state for change detection
+  final _initialSkillsJson = ''.obs;
+  
+  bool get hasChanges {
+    return _initialSkillsJson.value != skills.toList().toString();
+  }
 
   static const List<String> categories = ['core', 'frameworks', 'tools'];
 
@@ -33,8 +40,7 @@ class SkillsEditorController extends GetxController {
       final item = skills.removeAt(actualOldIndex);
       skills.insert(actualNewIndex, item);
 
-      // Auto-save after reorder
-      saveSkills(showLoading: false);
+      // Removed auto-save to prevent accidental modifications
     }
   }
 
@@ -55,7 +61,9 @@ class SkillsEditorController extends GetxController {
       if (doc.exists) {
         final data = doc.data()?['skillsSection'] as List<dynamic>?;
         if (data != null) {
-          skills.value = List<Map<String, dynamic>>.from(data);
+          final list = List<Map<String, dynamic>>.from(data);
+          skills.value = list;
+          _initialSkillsJson.value = list.toString();
         }
       }
     } catch (e) {
@@ -78,6 +86,9 @@ class SkillsEditorController extends GetxController {
           .collection('ProfileDetails')
           .doc('MyDetail')
           .set({'skillsSection': skills.toList()}, SetOptions(merge: true));
+      
+      _initialSkillsJson.value = skills.toList().toString();
+      
       Get.snackbar(
         'Success',
         'Skills updated successfully!',

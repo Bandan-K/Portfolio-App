@@ -10,6 +10,19 @@ class HeroEditorController extends GetxController {
   final projectsWorkedCtrl = TextEditingController();
   final isLoading = false.obs;
 
+  // Initial values for change detection
+  String _initialAppRating = '';
+  String _initialAppsPublished = '';
+  String _initialExperience = '';
+  String _initialProjectsWorked = '';
+
+  bool get hasChanges {
+    return appRatingCtrl.text.trim() != _initialAppRating ||
+        appsPublishedCtrl.text.trim() != _initialAppsPublished ||
+        experienceCtrl.text.trim() != _initialExperience ||
+        projectsWorkedCtrl.text.trim() != _initialProjectsWorked;
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -27,10 +40,12 @@ class HeroEditorController extends GetxController {
       if (doc.exists) {
         final data = doc.data()?['heroSection'] as Map<String, dynamic>?;
         if (data != null) {
-          appRatingCtrl.text = data['appRating'] ?? '';
-          appsPublishedCtrl.text = data['appsPublished'] ?? '';
-          experienceCtrl.text = data['experience'] ?? '';
-          projectsWorkedCtrl.text = data['projectsWorked'] ?? '';
+          appRatingCtrl.text = _initialAppRating = data['appRating'] ?? '';
+          appsPublishedCtrl.text = _initialAppsPublished =
+              data['appsPublished'] ?? '';
+          experienceCtrl.text = _initialExperience = data['experience'] ?? '';
+          projectsWorkedCtrl.text = _initialProjectsWorked =
+              data['projectsWorked'] ?? '';
         }
       }
     } catch (e) {
@@ -60,6 +75,13 @@ class HeroEditorController extends GetxController {
               'projectsWorked': projectsWorkedCtrl.text.trim(),
             },
           });
+
+      // Update initial values after successful save
+      _initialAppRating = appRatingCtrl.text.trim();
+      _initialAppsPublished = appsPublishedCtrl.text.trim();
+      _initialExperience = experienceCtrl.text.trim();
+      _initialProjectsWorked = projectsWorkedCtrl.text.trim();
+
       Get.snackbar(
         'Success',
         'Hero Section updated!',
